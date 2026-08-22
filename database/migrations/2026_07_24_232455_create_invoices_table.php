@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('invoices', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('tenant_id');
+            $table->string('number')->unique();
+            $table->string('status')->default('draft');
+            $table->unsignedInteger('subtotal')->default(0);
+            $table->unsignedInteger('tax_amount')->default(0);
+            $table->unsignedInteger('total')->default(0);
+            $table->date('issued_at');
+            $table->date('due_at');
+            $table->date('paid_at')->nullable();
+            $table->text('notes')->nullable();
+            $table->timestamps();
+
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('invoices');
+    }
+};
