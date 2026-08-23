@@ -1,0 +1,128 @@
+name: Deploy HospitalSas to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '20'
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: production
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json, zip
+        coverage: none
+        tools: composer:v2
+        ini-values: memory_limit=-1
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer Dependencies
+      uses: actions/cache@v5
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: Install Composer Dependencies
+      run: composer install --no-dev --no-progress --no-interaction --prefer-dist --optimize-autoloader --classmap-authoritative
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: npm
+
+    - name: Install Node dependencies
+      run: npm ci --no-audit --no-fund
+
+    - name: Build production assets
+      run: npm run build
+      env:
+        NODE_ENV: production
+
+    - name: Verify deployment files
+      run: |
+        test -f public/build/manifest.json
+        test -f vendor/autoload.php
+        test -d storage/framework
+        test -d bootstrap/cache
+
+    - name: Write deployment summary
+      run: |
+        {
+          echo "### Deployment prepared"
+          echo ""
+          echo "- Commit: \\`${GITHUB_SHA:0:7}\\`"
+          echo "- PHP: \\`${PHP_VERSION}\\`"
+          echo "- Node.js: \\`${NODE_VERSION}\\`"
+          echo "- Assets: \\`public/build/manifest.json\\`"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Deploy to production via FTPS
+      uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        protocol: ftps
+        port: 21
+        server-dir: ${{ secrets.FTP_SERVER_DIR || '/' }}
+        local-dir: ./
+        state-name: .hospitalsas-ftp-deploy-state.json
+        dangerous-clean-slate: false
+        log-level: minimal
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/.github/**
+          **/docs/**
+          **/docker/**
+          **/node_modules/**
+          **/tests/**
+          **/storage/debugbar/**
+          **/storage/framework/views/**
+          **/.env
+          **/.env.*
+          **/storage/logs/**
+          **/storage/framework/sessions/**
+          **/storage/framework/cache/**
+          **/.editorconfig
+          **/phpunit.xml
+          **/.DS_Store
+          **/Thumbs.db
+          **/README.md
+          **/DEPLOYMENT.md
+          **/PRODUCTION_CHECKLIST.md
+          **/.phpunit.cache/**
+          **/deploy*.sh
+          **/deploy*.bat
+          **/verify-deployment.sh
+          **/.aureuserp-ftp-deploy-state.json
