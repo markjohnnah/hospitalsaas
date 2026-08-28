@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class Medication extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
         'code',
         'brand_name',

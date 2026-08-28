@@ -12,7 +12,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Stancl\Tenancy\Facades\Tenancy;
 
 class BillingController extends Controller
 {
@@ -27,14 +26,12 @@ class BillingController extends Controller
             ->latest('issued_at')
             ->paginate(10);
 
-        // Usage stats must query the central users table
-        $usage = Tenancy::central(function () use ($tenant) {
-            return [
-                'users' => User::where('tenant_id', $tenant->id)->count(),
-                'patients' => User::where('tenant_id', $tenant->id)->where('role', Role::Patient->value)->count(),
-                'doctors' => User::where('tenant_id', $tenant->id)->where('role', Role::Doctor->value)->count(),
-            ];
-        });
+        // Usage stats from the shared users table
+        $usage = [
+            'users' => User::where('tenant_id', $tenant->id)->count(),
+            'patients' => User::where('tenant_id', $tenant->id)->where('role', Role::Patient->value)->count(),
+            'doctors' => User::where('tenant_id', $tenant->id)->where('role', Role::Doctor->value)->count(),
+        ];
 
         return Inertia::render('settings/billing', [
             'tenant' => $tenant,

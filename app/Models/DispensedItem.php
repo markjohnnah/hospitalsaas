@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class DispensedItem extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
         'dispensing_record_id',
         'medication_id',

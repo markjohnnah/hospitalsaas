@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\SpecializationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class Specialization extends Model
 {
-    /** @use HasFactory<\Database\Factories\SpecializationFactory> */
-    use HasFactory;
+    /** @use HasFactory<SpecializationFactory> */
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'name',

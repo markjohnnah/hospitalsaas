@@ -3,27 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\Admission;
-use App\Models\Bed;
-use App\Models\ImagingType;
 use App\Models\LabOrder;
 use App\Models\MedicalRecord;
 use App\Models\RadiologyOrder;
 use App\Models\User;
-use App\Models\Ward;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class Phase3ModulesTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function afterRefreshingDatabase(): void
-    {
-        $this->artisan('migrate', [
-            '--path' => 'database/migrations/tenant',
-            '--realpath' => false,
-        ]);
-    }
 
     // ─── EMR ─────────────────────────────────────────────────────────────────
 

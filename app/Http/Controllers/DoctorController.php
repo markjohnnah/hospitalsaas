@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
-use Stancl\Tenancy\Facades\Tenancy;
 
 class DoctorController extends Controller
 {
@@ -55,7 +54,7 @@ class DoctorController extends Controller
         $validated = $request->validated();
 
         $doctor = DB::transaction(function () use ($validated) {
-            $user = Tenancy::central(fn () => User::create([
+            $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
@@ -63,7 +62,7 @@ class DoctorController extends Controller
                 'role' => 'doctor',
                 'tenant_id' => auth()->user()->tenant_id,
                 'is_active' => true,
-            ]));
+            ]);
 
             $doctor = Doctor::create([
                 'user_id' => $user->id,

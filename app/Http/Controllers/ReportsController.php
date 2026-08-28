@@ -15,7 +15,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
-use Stancl\Tenancy\Facades\Tenancy;
 
 class ReportsController extends Controller
 {
@@ -33,7 +32,7 @@ class ReportsController extends Controller
 
     private function computeStats(string $tenantId, Carbon $today, Carbon $thisMonth, Carbon $lastMonth): array
     {
-        // ---- Tenant DB queries (MUST run before any Tenancy::central()) ----
+        // ---- Tenant-scoped queries (filtered by the current tenant via global scope) ----
 
         // Patient stats
         $totalPatients = Patient::count();
@@ -84,31 +83,29 @@ class ReportsController extends Controller
             ->values();
 
         // ---- Central DB queries ----
-        $centralStats = Tenancy::central(function () use ($tenantId, $thisMonth) {
-            return [
-                'total_staff' => User::where('tenant_id', $tenantId)
-                    ->whereNot('role', Role::Patient->value)->count(),
-                'staff_breakdown' => User::where('tenant_id', $tenantId)
-                    ->whereNot('role', Role::Patient->value)
-                    ->selectRaw('role, count(*) as count')
-                    ->groupBy('role')
-                    ->get()
-                    ->map(fn ($r) => ['role' => Role::tryFrom($r->role)?->label() ?? $r->role, 'count' => $r->count])
-                    ->values(),
-                'total_revenue' => Invoice::where('tenant_id', $tenantId)
-                    ->where('status', InvoiceStatus::Paid)->sum('total'),
-                'revenue_this_month' => Invoice::where('tenant_id', $tenantId)
-                    ->where('status', InvoiceStatus::Paid)
-                    ->where('paid_at', '>=', $thisMonth)
-                    ->sum('total'),
-                'outstanding' => Invoice::where('tenant_id', $tenantId)
-                    ->whereIn('status', [InvoiceStatus::Sent->value, InvoiceStatus::Overdue->value])
-                    ->sum('total'),
-                'total_invoices' => Invoice::where('tenant_id', $tenantId)->count(),
-                'overdue_invoices' => Invoice::where('tenant_id', $tenantId)
-                    ->where('status', InvoiceStatus::Overdue)->count(),
-            ];
-        });
+        $centralStats = [
+            'total_staff' => User::where('tenant_id', $tenantId)
+                ->whereNot('role', Role::Patient->value)->count(),
+            'staff_breakdown' => User::where('tenant_id', $tenantId)
+                ->whereNot('role', Role::Patient->value)
+                ->selectRaw('role, count(*) as count')
+                ->groupBy('role')
+                ->get()
+                ->map(fn ($r) => ['role' => Role::tryFrom($r->role)?->label() ?? $r->role, 'count' => $r->count])
+                ->values(),
+            'total_revenue' => Invoice::where('tenant_id', $tenantId)
+                ->where('status', InvoiceStatus::Paid)->sum('total'),
+            'revenue_this_month' => Invoice::where('tenant_id', $tenantId)
+                ->where('status', InvoiceStatus::Paid)
+                ->where('paid_at', '>=', $thisMonth)
+                ->sum('total'),
+            'outstanding' => Invoice::where('tenant_id', $tenantId)
+                ->whereIn('status', [InvoiceStatus::Sent->value, InvoiceStatus::Overdue->value])
+                ->sum('total'),
+            'total_invoices' => Invoice::where('tenant_id', $tenantId)->count(),
+            'overdue_invoices' => Invoice::where('tenant_id', $tenantId)
+                ->where('status', InvoiceStatus::Overdue)->count(),
+        ];
 
         return [
             'total_patients' => $totalPatients,

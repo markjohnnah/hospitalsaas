@@ -11,7 +11,9 @@ return new class extends Migration
         // Lab test catalog
         Schema::create('lab_tests', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('code', 30);
             $table->string('name');
             $table->string('category')->nullable()->comment('Hematology, Biochemistry, Microbiology, etc.');
             $table->string('unit')->nullable();
@@ -22,12 +24,15 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['category', 'is_active']);
+            $table->unique(['tenant_id', 'code']);
         });
 
         // Lab orders (requests)
         Schema::create('lab_orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('order_number', 20);
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('medical_record_id')->nullable()->constrained()->nullOnDelete();
@@ -41,11 +46,14 @@ return new class extends Migration
 
             $table->index(['patient_id', 'status']);
             $table->index(['status', 'ordered_date']);
+            $table->unique(['tenant_id', 'order_number']);
         });
 
         // Individual test results within an order
         Schema::create('lab_results', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('lab_order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('lab_test_id')->constrained()->cascadeOnDelete();
             $table->string('result_value')->nullable();

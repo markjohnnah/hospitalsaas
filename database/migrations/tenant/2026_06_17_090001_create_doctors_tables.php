@@ -10,6 +10,8 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->string('name');
             $table->string('code', 20)->nullable();
             $table->text('description')->nullable();
@@ -19,6 +21,8 @@ return new class extends Migration
 
         Schema::create('specializations', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
@@ -27,10 +31,12 @@ return new class extends Migration
 
         Schema::create('doctors', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->unsignedBigInteger('user_id');
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('specialization_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('license_number', 50)->nullable()->unique();
+            $table->string('license_number', 50)->nullable();
             $table->decimal('consultation_fee', 10, 2)->default(0);
             $table->text('bio')->nullable();
             $table->string('qualification')->nullable();
@@ -39,10 +45,13 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('user_id');
+            $table->unique(['tenant_id', 'license_number']);
         });
 
         Schema::create('doctor_schedules', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->tinyInteger('day_of_week'); // 0=Sunday … 6=Saturday
             $table->time('start_time');

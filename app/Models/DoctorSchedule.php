@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\DoctorScheduleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class DoctorSchedule extends Model
 {
-    /** @use HasFactory<\Database\Factories\DoctorScheduleFactory> */
-    use HasFactory;
+    /** @use HasFactory<DoctorScheduleFactory> */
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'doctor_id',

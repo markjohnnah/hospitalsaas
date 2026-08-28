@@ -39,13 +39,11 @@ class DashboardController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        return tenancy()->central(function () use ($tenantId) {
-            return [
-                ['label' => 'Total Staff', 'value' => User::where('tenant_id', $tenantId)->whereNot('role', Role::Patient->value)->count(), 'icon' => 'users'],
-                ['label' => 'Patients', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Patient->value)->count(), 'icon' => 'heart-pulse'],
-                ['label' => 'Doctors', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Doctor->value)->count(), 'icon' => 'stethoscope'],
-                ['label' => 'Nurses', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Nurse->value)->count(), 'icon' => 'activity'],
-            ];
-        });
+        return [
+            ['label' => 'Total Staff', 'value' => User::where('tenant_id', $tenantId)->whereNot('role', Role::Patient->value)->count(), 'icon' => 'users'],
+            ['label' => 'Patients', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Patient->value)->count(), 'icon' => 'heart-pulse'],
+            ['label' => 'Doctors', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Doctor->value)->count(), 'icon' => 'stethoscope'],
+            ['label' => 'Nurses', 'value' => User::where('tenant_id', $tenantId)->where('role', Role::Nurse->value)->count(), 'icon' => 'activity'],
+        ];
     }
 }

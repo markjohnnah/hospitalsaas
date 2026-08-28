@@ -11,14 +11,6 @@ class Phase2ModulesTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function afterRefreshingDatabase()
-    {
-        $this->artisan('migrate', [
-            '--path' => 'database/migrations/tenant',
-            '--realpath' => false,
-        ]);
-    }
-
     // ─── Patients ────────────────────────────────────────────────────────────
 
     public function test_guests_cannot_access_patients_index(): void

@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->registerMiddlewareAliases();
+        $this->loadMigrationsFrom(database_path('migrations/tenant'));
     }
 
     protected function registerMiddlewareAliases(): void

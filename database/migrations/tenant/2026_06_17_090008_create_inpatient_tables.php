@@ -11,19 +11,24 @@ return new class extends Migration
         // Wards
         Schema::create('wards', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->string('name');
-            $table->string('code', 20)->unique();
+            $table->string('code', 20);
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('type', ['general', 'private', 'icu', 'nicu', 'maternity', 'pediatric', 'surgical', 'psychiatric'])->default('general');
             $table->integer('total_beds')->default(0);
             $table->string('floor')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->unique(['tenant_id', 'code']);
         });
 
         // Beds within wards
         Schema::create('beds', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->string('bed_number', 20);
             $table->foreignId('ward_id')->constrained()->cascadeOnDelete();
             $table->enum('type', ['standard', 'icu', 'isolation', 'pediatric'])->default('standard');
@@ -38,7 +43,9 @@ return new class extends Migration
         // Patient admissions
         Schema::create('admissions', function (Blueprint $table) {
             $table->id();
-            $table->string('admission_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('admission_number', 20);
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('bed_id')->constrained()->cascadeOnDelete();
             $table->foreignId('ward_id')->constrained()->cascadeOnDelete();
@@ -55,6 +62,7 @@ return new class extends Migration
 
             $table->index(['patient_id', 'status']);
             $table->index(['bed_id', 'status']);
+            $table->unique(['tenant_id', 'admission_number']);
         });
     }
 

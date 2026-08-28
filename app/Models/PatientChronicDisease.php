@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\PatientChronicDiseaseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class PatientChronicDisease extends Model
 {
-    /** @use HasFactory<\Database\Factories\PatientChronicDiseaseFactory> */
-    use HasFactory;
+    /** @use HasFactory<PatientChronicDiseaseFactory> */
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'patient_id',

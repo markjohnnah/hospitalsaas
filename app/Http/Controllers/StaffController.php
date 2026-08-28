@@ -13,37 +13,22 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
-use Stancl\Tenancy\Facades\Tenancy;
 
 class StaffController extends Controller
 {
-    /**
-     * Run a callback on the central database connection.
-     *
-     * All User queries must run on the central connection since the users
-     * table lives in the central DB, not in tenant databases.
-     */
-    private function central(callable $callback): mixed
-    {
-        return Tenancy::central($callback);
-    }
-
     public function index(Request $request): Response
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $staff = $this->central(function () use ($tenantId, $request) {
-            return User::query()
-                ->where('tenant_id', $tenantId)
-                ->whereNot('role', Role::Patient->value)
-                ->when($request->input('search'), fn ($q, $s) =>
-                    $q->where(fn ($q) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")))
-                ->when($request->input('role'), fn ($q, $r) => $q->where('role', $r))
-                ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
-                ->orderBy('name')
-                ->paginate(20)
-                ->withQueryString();
-        });
+        $staff = User::query()
+            ->where('tenant_id', $tenantId)
+            ->whereNot('role', Role::Patient->value)
+            ->when($request->input('search'), fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")))
+            ->when($request->input('role'), fn ($q, $r) => $q->where('role', $r))
+            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
 
         return Inertia::render('staff/index', [
             'staff' => $staff,
@@ -72,20 +57,18 @@ class StaffController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $this->central(function () use ($validated, $request) {
-            User::create([
-                'tenant_id' => auth()->user()->tenant_id,
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'role' => $validated['role'],
-                'gender' => $validated['gender'] ?? null,
-                'date_of_birth' => $validated['date_of_birth'] ?? null,
-                'password' => Hash::make($validated['password']),
-                'is_active' => $request->boolean('is_active', true),
-                'email_verified_at' => now(),
-            ]);
-        });
+        User::create([
+            'tenant_id' => auth()->user()->tenant_id,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'role' => $validated['role'],
+            'gender' => $validated['gender'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'password' => Hash::make($validated['password']),
+            'is_active' => $request->boolean('is_active', true),
+            'email_verified_at' => now(),
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Staff member '{$validated['name']}' created successfully."]);
 
@@ -96,7 +79,7 @@ class StaffController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $staff = $this->central(fn () => User::where('tenant_id', $tenantId)->findOrFail($id));
+        $staff = User::where('tenant_id', $tenantId)->findOrFail($id);
 
         return Inertia::render('staff/show', [
             'staff' => $staff,
@@ -107,7 +90,7 @@ class StaffController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $staff = $this->central(fn () => User::where('tenant_id', $tenantId)->findOrFail($id));
+        $staff = User::where('tenant_id', $tenantId)->findOrFail($id);
 
         return Inertia::render('staff/edit', [
             'staff' => $staff,
@@ -119,7 +102,7 @@ class StaffController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $staff = $this->central(fn () => User::where('tenant_id', $tenantId)->findOrFail($id));
+        $staff = User::where('tenant_id', $tenantId)->findOrFail($id);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -132,23 +115,21 @@ class StaffController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $this->central(function () use ($staff, $validated, $request) {
-            $staff->fill([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'role' => $validated['role'],
-                'gender' => $validated['gender'] ?? null,
-                'date_of_birth' => $validated['date_of_birth'] ?? null,
-                'is_active' => $request->boolean('is_active', true),
-            ]);
+        $staff->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'role' => $validated['role'],
+            'gender' => $validated['gender'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
 
-            if (! empty($validated['password'])) {
-                $staff->password = Hash::make($validated['password']);
-            }
+        if (! empty($validated['password'])) {
+            $staff->password = Hash::make($validated['password']);
+        }
 
-            $staff->save();
-        });
+        $staff->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Staff member '{$validated['name']}' updated successfully."]);
 
@@ -159,15 +140,13 @@ class StaffController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $staff = $this->central(fn () => User::where('tenant_id', $tenantId)->findOrFail($id));
+        $staff = User::where('tenant_id', $tenantId)->findOrFail($id);
 
         if ($staff->id === auth()->id()) {
             return back()->withErrors(['error' => 'You cannot delete your own account.']);
         }
 
-        $this->central(function () use ($staff) {
-            $staff->update(['is_active' => false]);
-        });
+        $staff->update(['is_active' => false]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Staff member '{$staff->name}' deactivated successfully."]);
 

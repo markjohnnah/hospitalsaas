@@ -11,7 +11,9 @@ return new class extends Migration
         // Visit records (EMR core)
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
-            $table->string('record_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('record_number', 20);
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('appointment_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
@@ -31,11 +33,14 @@ return new class extends Migration
 
             $table->index(['patient_id', 'visit_date']);
             $table->index(['doctor_id', 'visit_date']);
+            $table->unique(['tenant_id', 'record_number']);
         });
 
         // Vitals per record
         Schema::create('vitals', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('medical_record_id')->constrained()->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->decimal('temperature', 5, 2)->nullable()->comment('°C');
@@ -56,6 +61,8 @@ return new class extends Migration
         // Diagnoses per record
         Schema::create('diagnoses', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('medical_record_id')->constrained()->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->string('icd10_code', 20)->nullable();
@@ -70,7 +77,9 @@ return new class extends Migration
         // Prescriptions per record
         Schema::create('prescriptions', function (Blueprint $table) {
             $table->id();
-            $table->string('prescription_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('prescription_number', 20);
             $table->foreignId('medical_record_id')->constrained()->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
@@ -81,11 +90,14 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['patient_id', 'status']);
+            $table->unique(['tenant_id', 'prescription_number']);
         });
 
         // Prescription line items
         Schema::create('prescription_items', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('prescription_id')->constrained()->cascadeOnDelete();
             $table->string('medication_name');
             $table->string('generic_name')->nullable();

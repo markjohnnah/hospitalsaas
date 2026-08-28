@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->string('appointment_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('appointment_number', 20);
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
@@ -29,10 +31,13 @@ return new class extends Migration
             $table->index(['doctor_id', 'scheduled_at']);
             $table->index(['patient_id', 'scheduled_at']);
             $table->index(['status', 'scheduled_at']);
+            $table->unique(['tenant_id', 'appointment_number']);
         });
 
         Schema::create('waiting_list', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();

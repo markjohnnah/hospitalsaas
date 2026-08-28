@@ -11,18 +11,23 @@ return new class extends Migration
         // Imaging modalities / types catalog
         Schema::create('imaging_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('code', 20);
             $table->string('name');
             $table->string('description')->nullable();
             $table->decimal('price', 10, 2)->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->unique(['tenant_id', 'code']);
         });
 
         // Radiology orders
         Schema::create('radiology_orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_number', 20)->unique();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('order_number', 20);
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('imaging_type_id')->constrained()->cascadeOnDelete();
@@ -40,6 +45,7 @@ return new class extends Migration
 
             $table->index(['patient_id', 'status']);
             $table->index(['status', 'ordered_date']);
+            $table->unique(['tenant_id', 'order_number']);
         });
     }
 

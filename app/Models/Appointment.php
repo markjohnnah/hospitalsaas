@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class Appointment extends Model
 {
-    /** @use HasFactory<\Database\Factories\AppointmentFactory> */
-    use HasFactory;
+    /** @use HasFactory<AppointmentFactory> */
+    use BelongsToTenant, HasFactory;
 
     protected $fillable = [
         'appointment_number',

@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use Database\Factories\MedicalRecordFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class MedicalRecord extends Model
 {
-    /** @use HasFactory<\Database\Factories\MedicalRecordFactory> */
-    use HasFactory;
+    /** @use HasFactory<MedicalRecordFactory> */
+    use BelongsToTenant, HasFactory;
+
     use SoftDeletes;
 
     protected $fillable = [

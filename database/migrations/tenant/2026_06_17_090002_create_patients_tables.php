@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
-            $table->string('mrn', 20)->unique(); // Medical Record Number
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->string('mrn', 20); // Medical Record Number
             $table->string('first_name');
             $table->string('last_name');
             $table->date('date_of_birth');
@@ -41,10 +43,13 @@ return new class extends Migration
 
             $table->index(['last_name', 'first_name']);
             $table->index('phone');
+            $table->unique(['tenant_id', 'mrn']);
         });
 
         Schema::create('patient_allergies', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->string('allergen');
             $table->string('reaction')->nullable();
@@ -54,6 +59,8 @@ return new class extends Migration
 
         Schema::create('patient_chronic_diseases', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->string('condition_name');
             $table->string('icd10_code', 10)->nullable();
@@ -65,6 +72,8 @@ return new class extends Migration
 
         Schema::create('patient_documents', function (Blueprint $table) {
             $table->id();
+            $table->string('tenant_id')->nullable()->index();
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
             $table->string('document_type'); // id_card, insurance_card, referral_letter, etc.
             $table->string('file_path');
