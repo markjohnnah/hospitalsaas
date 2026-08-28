@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Shield, Trash2 } from 'lucide-react';
+import { Pencil, Shield, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,29 +23,42 @@ function roleLabel(role: string): string {
         .join(' ');
 }
 
-function roleBadgeVariant(role: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (role === 'super_admin') return 'destructive';
-    if (role === 'hospital_admin') return 'default';
+function roleBadgeVariant(
+    role: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' {
+    if (role === 'super_admin') {
+        return 'destructive';
+    }
+
+    if (role === 'hospital_admin') {
+        return 'default';
+    }
+
     return 'secondary';
 }
 
 export default function UsersIndex({ users }: Props) {
     function handleDelete(user: User) {
-        if (!confirm(`Are you sure you want to delete "${user.name}"?`)) return;
+        if (!confirm(`Are you sure you want to delete "${user.name}"?`)) {
+            return;
+        }
+
         router.delete(`/admin/users/${user.id}`);
     }
 
     return (
         <>
-            <Head title="System Users" />
+            <Head title="Hospital Admins" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">System Users</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            Hospital Admins
+                        </h1>
                         <p className="text-muted-foreground">
-                            All registered system users — {users.total} total
+                            Manage hospital admin accounts — {users.total} total
                         </p>
                     </div>
                 </div>
@@ -55,7 +68,9 @@ export default function UsersIndex({ users }: Props) {
                     <Card className="border-dashed">
                         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                             <Shield className="mb-4 h-10 w-10 text-muted-foreground/40" />
-                            <h3 className="text-lg font-medium">No users found</h3>
+                            <h3 className="text-lg font-medium">
+                                No users found
+                            </h3>
                             <p className="text-sm text-muted-foreground">
                                 Users will appear here once they are created.
                             </p>
@@ -64,45 +79,76 @@ export default function UsersIndex({ users }: Props) {
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {users.data.map((user) => (
-                            <Card key={user.id} className="transition-shadow hover:shadow-md">
+                            <Card
+                                key={user.id}
+                                className="transition-shadow hover:shadow-md"
+                            >
                                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                                     <div className="flex items-center gap-3">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                             <Shield className="h-5 w-5 text-primary" />
                                         </div>
                                         <div>
-                                            <CardTitle className="text-base">{user.name}</CardTitle>
-                                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                                            <CardTitle className="text-base">
+                                                {user.name}
+                                            </CardTitle>
+                                            <p className="text-xs text-muted-foreground">
+                                                {user.email}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Badge variant={roleBadgeVariant(user.role)}>
+                                    <Badge
+                                        variant={roleBadgeVariant(user.role)}
+                                    >
                                         {roleLabel(user.role)}
                                     </Badge>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    {user.tenant && (
+                                    {Boolean(user.tenant) && (
                                         <p className="text-sm text-muted-foreground">
                                             Hospital:{' '}
                                             <span className="font-medium text-foreground">
-                                                {(user.tenant as { name: string }).name}
+                                                {
+                                                    (
+                                                        user.tenant as {
+                                                            name: string;
+                                                        }
+                                                    ).name
+                                                }
                                             </span>
                                         </p>
                                     )}
-                                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                                    <Badge
+                                        variant={
+                                            user.is_active
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
+                                    >
                                         {user.is_active ? 'Active' : 'Inactive'}
                                     </Badge>
-                                    {user.role !== 'super_admin' && (
-                                        <div className="flex gap-2 pt-2">
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleDelete(user)}
+                                    <div className="flex gap-2 pt-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={`/admin/users/${user.id}/edit`}
                                             >
-                                                <Trash2 className="mr-1 h-3 w-3" />
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    )}
+                                                <Pencil className="mr-1 h-3 w-3" />
+                                                Edit
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDelete(user)}
+                                        >
+                                            <Trash2 className="mr-1 h-3 w-3" />
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -114,7 +160,9 @@ export default function UsersIndex({ users }: Props) {
                     <div className="flex justify-center gap-2">
                         {users.current_page > 1 && (
                             <Button variant="outline" asChild>
-                                <Link href={`/admin/users?page=${users.current_page - 1}`}>
+                                <Link
+                                    href={`/admin/users?page=${users.current_page - 1}`}
+                                >
                                     Previous
                                 </Link>
                             </Button>
@@ -124,7 +172,9 @@ export default function UsersIndex({ users }: Props) {
                         </span>
                         {users.current_page < users.last_page && (
                             <Button variant="outline" asChild>
-                                <Link href={`/admin/users?page=${users.current_page + 1}`}>
+                                <Link
+                                    href={`/admin/users?page=${users.current_page + 1}`}
+                                >
                                     Next
                                 </Link>
                             </Button>
@@ -139,6 +189,6 @@ export default function UsersIndex({ users }: Props) {
 UsersIndex.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/dashboard' },
-        { title: 'System Users', href: '/admin/users' },
+        { title: 'Hospital Admins', href: '/admin/users' },
     ],
 };

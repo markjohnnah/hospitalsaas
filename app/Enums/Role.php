@@ -47,6 +47,14 @@ enum Role: string
         ];
     }
 
+    public static function manageableStaffRoles(): array
+    {
+        return array_values(array_filter(
+            self::hospitalStaffRoles(),
+            fn (self $role) => $role !== self::HospitalAdmin,
+        ));
+    }
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

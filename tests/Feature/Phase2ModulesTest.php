@@ -2,14 +2,38 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Role;
 use App\Models\Patient;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Stancl\Tenancy\Facades\Tenancy;
 use Tests\TestCase;
 
 class Phase2ModulesTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function hospitalAdmin(): array
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => Role::HospitalAdmin->value,
+            'email_verified_at' => now(),
+        ]);
+
+        return [$tenant, $admin];
+    }
+
+    private function patientIn(Tenant $tenant): Patient
+    {
+        Tenancy::initialize($tenant);
+        $patient = Patient::factory()->create();
+        Tenancy::end();
+
+        return $patient;
+    }
 
     // ─── Patients ────────────────────────────────────────────────────────────
 
@@ -19,29 +43,29 @@ class Phase2ModulesTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_user_can_access_patients_index(): void
+    public function test_hospital_admin_can_access_patients_index(): void
     {
-        $user = User::factory()->create();
+        [, $admin] = $this->hospitalAdmin();
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->get(route('patients.index'))
             ->assertOk();
     }
 
-    public function test_authenticated_user_can_access_create_patient_page(): void
+    public function test_hospital_admin_can_access_create_patient_page(): void
     {
-        $user = User::factory()->create();
+        [, $admin] = $this->hospitalAdmin();
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->get(route('patients.create'))
             ->assertOk();
     }
 
     public function test_patient_can_be_registered(): void
     {
-        $user = User::factory()->create();
+        [$tenant, $admin] = $this->hospitalAdmin();
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->post(route('patients.store'), [
                 'first_name' => 'John',
                 'last_name' => 'Doe',
@@ -54,44 +78,45 @@ class Phase2ModulesTest extends TestCase
             'first_name' => 'John',
             'last_name' => 'Doe',
             'gender' => 'male',
+            'tenant_id' => $tenant->id,
         ]);
     }
 
     public function test_patient_store_validation_fails_without_required_fields(): void
     {
-        $user = User::factory()->create();
+        [, $admin] = $this->hospitalAdmin();
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->post(route('patients.store'), [])
             ->assertSessionHasErrors(['first_name', 'last_name', 'date_of_birth', 'gender']);
     }
 
     public function test_patient_show_page_is_accessible(): void
     {
-        $user = User::factory()->create();
-        $patient = Patient::factory()->create();
+        [$tenant, $admin] = $this->hospitalAdmin();
+        $patient = $this->patientIn($tenant);
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->get(route('patients.show', $patient))
             ->assertOk();
     }
 
     public function test_patient_edit_page_is_accessible(): void
     {
-        $user = User::factory()->create();
-        $patient = Patient::factory()->create();
+        [$tenant, $admin] = $this->hospitalAdmin();
+        $patient = $this->patientIn($tenant);
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->get(route('patients.edit', $patient))
             ->assertOk();
     }
 
     public function test_patient_can_be_updated(): void
     {
-        $user = User::factory()->create();
-        $patient = Patient::factory()->create();
+        [$tenant, $admin] = $this->hospitalAdmin();
+        $patient = $this->patientIn($tenant);
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->put(route('patients.update', $patient), [
                 'first_name' => 'Jane',
                 'last_name' => 'Smith',
@@ -109,10 +134,10 @@ class Phase2ModulesTest extends TestCase
 
     public function test_patient_can_be_soft_deleted(): void
     {
-        $user = User::factory()->create();
-        $patient = Patient::factory()->create();
+        [$tenant, $admin] = $this->hospitalAdmin();
+        $patient = $this->patientIn($tenant);
 
-        $this->actingAs($user)
+        $this->actingAs($admin)
             ->delete(route('patients.destroy', $patient))
             ->assertRedirect(route('patients.index'));
 

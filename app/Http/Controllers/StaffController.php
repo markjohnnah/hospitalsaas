@@ -16,13 +16,21 @@ use Inertia\Response;
 
 class StaffController extends Controller
 {
+    private function roleOptions(): array
+    {
+        return array_map(
+            fn (Role $role) => ['name' => $role->name, 'value' => $role->value, 'label' => $role->label()],
+            Role::manageableStaffRoles(),
+        );
+    }
+
     public function index(Request $request): Response
     {
         $tenantId = auth()->user()->tenant_id;
 
         $staff = User::query()
             ->where('tenant_id', $tenantId)
-            ->whereNot('role', Role::Patient->value)
+            ->whereNotIn('role', [Role::HospitalAdmin->value, Role::Patient->value])
             ->when($request->input('search'), fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")))
             ->when($request->input('role'), fn ($q, $r) => $q->where('role', $r))
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
@@ -32,7 +40,7 @@ class StaffController extends Controller
 
         return Inertia::render('staff/index', [
             'staff' => $staff,
-            'roles' => Role::hospitalStaffRoles(),
+            'roles' => $this->roleOptions(),
             'filters' => $request->only(['search', 'role', 'is_active']),
         ]);
     }
@@ -40,7 +48,7 @@ class StaffController extends Controller
     public function create(): Response
     {
         return Inertia::render('staff/create', [
-            'roles' => Role::hospitalStaffRoles(),
+            'roles' => $this->roleOptions(),
         ]);
     }
 
@@ -50,7 +58,7 @@ class StaffController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'role' => ['required', 'string', Rule::in(array_column(Role::hospitalStaffRoles(), 'value'))],
+            'role' => ['required', 'string', Rule::in(array_column(Role::manageableStaffRoles(), 'value'))],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'password' => ['required', Password::defaults()],
@@ -94,7 +102,7 @@ class StaffController extends Controller
 
         return Inertia::render('staff/edit', [
             'staff' => $staff,
-            'roles' => Role::hospitalStaffRoles(),
+            'roles' => $this->roleOptions(),
         ]);
     }
 
@@ -108,7 +116,7 @@ class StaffController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff->id)],
             'phone' => ['nullable', 'string', 'max:30'],
-            'role' => ['required', 'string', Rule::in(array_column(Role::hospitalStaffRoles(), 'value'))],
+            'role' => ['required', 'string', Rule::in(array_column(Role::manageableStaffRoles(), 'value'))],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'password' => ['nullable', Password::defaults()],

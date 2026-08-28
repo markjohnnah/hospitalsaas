@@ -49,7 +49,7 @@ class StaffManagementTest extends TestCase
         $this->get(route('staff.index'))->assertRedirect(route('login'));
     }
 
-    public function test_super_admin_sees_empty_staff_list(): void
+    public function test_super_admin_cannot_access_staff_list(): void
     {
         $user = User::factory()->create([
             'role' => Role::SuperAdmin->value,
@@ -57,9 +57,8 @@ class StaffManagementTest extends TestCase
         ]);
         $this->actingAs($user);
 
-        // Super admins have no tenant_id; the page loads but shows no staff.
-        // The sidebar already hides Staff from super admins.
-        $this->get(route('staff.index'))->assertOk();
+        // Super admins manage hospital admins only — staff belongs to each hospital admin.
+        $this->get(route('staff.index'))->assertForbidden();
     }
 
     public function test_hospital_admin_can_access_staff_index(): void
@@ -308,5 +307,60 @@ class StaffManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('staff.index'))
             ->assertOk();
+    }
+
+    // ─── Authorization Boundaries ───────────────────────────────────────────
+
+    public function test_super_admin_cannot_access_staff(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => Role::SuperAdmin->value,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('staff.index'))
+            ->assertForbidden();
+    }
+
+    public function test_super_admin_cannot_access_patients(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => Role::SuperAdmin->value,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('patients.index'))
+            ->assertForbidden();
+    }
+
+    public function test_non_admin_staff_cannot_access_staff_management(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $doctor = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'role' => Role::Doctor->value,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($doctor)
+            ->get(route('staff.index'))
+            ->assertForbidden();
+    }
+
+    public function test_hospital_admin_cannot_create_another_hospital_admin(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->hospitalAdmin($tenant);
+
+        $this->actingAs($admin)
+            ->post(route('staff.store'), [
+                'name' => 'Rogue Admin',
+                'email' => 'rogue@hms.com',
+                'password' => 'password123',
+                'role' => Role::HospitalAdmin->value,
+            ])
+            ->assertSessionHasErrors(['role']);
     }
 }

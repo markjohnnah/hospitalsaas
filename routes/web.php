@@ -28,7 +28,8 @@ Route::middleware(['auth', 'verified', 'role:'.Role::SuperAdmin->value])
     ->name('admin.')
     ->group(function () {
         Route::resource('tenants', TenantController::class);
-        Route::resource('users', AdminUserController::class)->only(['index', 'destroy']);
+        Route::resource('users', AdminUserController::class)->only(['index', 'edit', 'update', 'destroy']);
+        Route::patch('users/{user}/password', [AdminUserController::class, 'resetPassword'])->name('users.password');
 
         // Billing
         Route::prefix('billing')->name('billing.')->group(function () {
@@ -46,13 +47,15 @@ Route::middleware(['auth', 'verified', 'tenant'])
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Phase 2: Patient, Doctor, Appointment management
-        Route::resource('patients', PatientController::class);
+        // Phase 2: Doctor and Appointment management (all tenant staff)
         Route::resource('doctors', DoctorController::class);
         Route::resource('appointments', AppointmentController::class);
 
-        // Staff management (hospital admin only)
-        Route::resource('staff', StaffController::class);
+        // Patient & staff management (hospital admin only)
+        Route::middleware('role:'.Role::HospitalAdmin->value)->group(function () {
+            Route::resource('patients', PatientController::class);
+            Route::resource('staff', StaffController::class);
+        });
 
         // Tenant billing
         Route::get('/billing', [TenantBillingController::class, 'index'])->name('billing.dashboard');

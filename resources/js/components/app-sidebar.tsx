@@ -1,6 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Activity,
     BarChart3,
     Bed,
     Building2,
@@ -9,9 +8,7 @@ import {
     CreditCard,
     FileText,
     FlaskConical,
-    Heart,
     LayoutGrid,
-    Package,
     Pill,
     RadioTower,
     Receipt,
@@ -46,7 +43,11 @@ function useNavItems(): NavItem[] {
         return [
             { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
             { title: 'Hospitals', href: '/admin/tenants', icon: Building2 },
-            { title: 'System Users', href: adminUsersRoutes.index.url(), icon: Shield },
+            {
+                title: 'System Users',
+                href: adminUsersRoutes.index.url(),
+                icon: Shield,
+            },
             { title: 'Billing', href: '/admin/billing/plans', icon: Receipt },
         ];
     }
@@ -55,10 +56,17 @@ function useNavItems(): NavItem[] {
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
     ];
 
-    // Receptionist, Hospital Admin, Doctor, Nurse see patients
-    if (['hospital_admin', 'doctor', 'nurse', 'receptionist'].includes(role)) {
+    // Hospital Admin manages patients; receptionist/doctor/nurse see appointments
+    if (role === 'hospital_admin') {
         items.push({ title: 'Patients', href: '/patients', icon: UserSquare2 });
-        items.push({ title: 'Appointments', href: '/appointments', icon: Calendar });
+    }
+
+    if (['hospital_admin', 'doctor', 'nurse', 'receptionist'].includes(role)) {
+        items.push({
+            title: 'Appointments',
+            href: '/appointments',
+            icon: Calendar,
+        });
     }
 
     // Doctor and Hospital Admin see doctors list
@@ -83,7 +91,11 @@ function useNavItems(): NavItem[] {
 
     // Radiology
     if (['radiologist', 'doctor', 'hospital_admin'].includes(role)) {
-        items.push({ title: 'Radiology', href: '/radiology', icon: RadioTower });
+        items.push({
+            title: 'Radiology',
+            href: '/radiology',
+            icon: RadioTower,
+        });
     }
 
     // Inpatient
@@ -104,10 +116,26 @@ function useNavItems(): NavItem[] {
 
     // Patient portal
     if (role === 'patient') {
-        items.push({ title: 'My Appointments', href: '/my/appointments', icon: Calendar });
-        items.push({ title: 'My Records', href: '/my/records', icon: ClipboardList });
-        items.push({ title: 'My Prescriptions', href: '/my/prescriptions', icon: Pill });
-        items.push({ title: 'My Bills', href: '/my/billing', icon: CreditCard });
+        items.push({
+            title: 'My Appointments',
+            href: '/my/appointments',
+            icon: Calendar,
+        });
+        items.push({
+            title: 'My Records',
+            href: '/my/records',
+            icon: ClipboardList,
+        });
+        items.push({
+            title: 'My Prescriptions',
+            href: '/my/prescriptions',
+            icon: Pill,
+        });
+        items.push({
+            title: 'My Bills',
+            href: '/my/billing',
+            icon: CreditCard,
+        });
     }
 
     return items;
@@ -136,7 +164,13 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <NavFooter
-                    items={[{ title: 'Settings', href: '/settings/profile', icon: Settings }]}
+                    items={[
+                        {
+                            title: 'Settings',
+                            href: '/settings/profile',
+                            icon: Settings,
+                        },
+                    ]}
                     className="mt-auto"
                 />
                 <NavUser />
@@ -144,4 +178,3 @@ export function AppSidebar() {
         </Sidebar>
     );
 }
-
